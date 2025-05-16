@@ -232,6 +232,135 @@
             top: -50px;
             opacity: 0;
         }
+
+        /* Birthday Animation Styles */
+        @keyframes birthday-zoom {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes birthday-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes birthday-bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+
+        .birthday-animation {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .birthday-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 5rem;
+            color: #ff6b95;
+            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #e60073, 0 0 40px #e60073, 0 0 50px #e60073;
+            margin-bottom: 30px;
+            animation: birthday-bounce 2s infinite;
+        }
+
+        .birthday-cake {
+            font-size: 8rem;
+            animation: birthday-zoom 2s infinite;
+        }
+
+        .birthday-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .birthday-emoji {
+            position: absolute;
+            font-size: 3rem;
+        }
+
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 5px;
+            animation: firework 2s ease-out infinite;
+        }
+
+        @keyframes firework {
+            0% { 
+                transform: scale(0);
+                opacity: 1;
+                box-shadow: 0 0 0 0px #fff, 0 0 0 0px #fff;
+            }
+            100% { 
+                transform: scale(1);
+                opacity: 0;
+                box-shadow: 0 0 0 20px #ff0040, 0 0 0 40px #ffff00;
+            }
+        }
+
+        .birthday-continue {
+            position: absolute;
+            bottom: 30px;
+            background-color: #e83e8c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(232, 62, 140, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .birthday-continue:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* Music Button Styles */
+        .music-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #e83e8c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(232, 62, 140, 0.4);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .music-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .music-button i {
+            color: white;
+            font-size: 1.5rem;
+        }
         
         @media (max-width: 768px) {
             .header h1 {
@@ -260,9 +389,23 @@
                 height: 50px;
                 font-size: 1.5rem;
             }
+
+            .birthday-text {
+                font-size: 3rem;
+            }
+
+            .birthday-cake {
+                font-size: 5rem;
+            }
+            
+            .music-button {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+            }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -330,6 +473,13 @@
                     <img src="asset/image4.jpg" alt="Kenangan kita">
                 </div>
             </div>
+            
+            <!-- Add Play Music Button -->
+            <div class="buttons">
+                <button class="btn" id="playMusicBtn">
+                    <i class="fas fa-music"></i> Putar Musik Ulang Tahun
+                </button>
+            </div>
         </div>
         
         <div class="footer">
@@ -341,7 +491,64 @@
         <div class="confetti" id="confetti"></div>
     </div>
 
+    <!-- Floating Music Button -->
+    <div class="music-button" id="floatingMusicBtn">
+        <i class="fas fa-music" id="musicIcon"></i>
+    </div>
+
+    <!-- Birthday Animation Container -->
+    <div class="birthday-animation" id="birthdayAnimation">
+        <div class="birthday-text">Selamat Ulang Tahun Sayang!</div>
+        <div class="birthday-cake">🎂</div>
+        <div id="fireworks"></div>
+        <div id="birthdayCircle" class="birthday-circle"></div>
+        <button class="birthday-continue" id="continueBtn">Lanjutkan</button>
+    </div>
+
+    <!-- Add audio element for birthday song -->
+    <audio id="birthdaySong" loop>
+        <source src="asset/happy-birthday-song.mp3" type="audio/mp3">
+        <!-- Fallback untuk browser yang tidak mendukung audio -->
+        Browser Anda tidak mendukung tag audio.
+    </audio>
+
     <script>
+        // Audio Controls
+        let musicPlaying = false;
+        const audioElement = document.getElementById('birthdaySong');
+        const musicIcon = document.getElementById('musicIcon');
+        const playMusicBtn = document.getElementById('playMusicBtn');
+        const floatingMusicBtn = document.getElementById('floatingMusicBtn');
+        
+        // Function to toggle music
+        function toggleMusic() {
+            if (musicPlaying) {
+                audioElement.pause();
+                musicIcon.className = 'fas fa-music';
+                musicPlaying = false;
+            } else {
+                // Set the source before playing to ensure it's loaded
+                audioElement.src = "asset/happy-birthday-song.mp3";
+                
+                // Play the audio
+                const playPromise = audioElement.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        musicIcon.className = 'fas fa-pause';
+                        musicPlaying = true;
+                    }).catch(error => {
+                        console.log("Play was prevented: ", error);
+                        alert("Tidak dapat memutar musik. Pastikan file musik tersedia.");
+                    });
+                }
+            }
+        }
+        
+        // Add click event listeners for music buttons
+        playMusicBtn.addEventListener('click', toggleMusic);
+        floatingMusicBtn.addEventListener('click', toggleMusic);
+        
         // Countdown Timer
         function updateCountdown() {
             // Ganti tanggal di bawah ini dengan tanggal ulang tahun
@@ -365,6 +572,9 @@
                 document.getElementById('hours').innerHTML = '00';
                 document.getElementById('minutes').innerHTML = '00';
                 document.getElementById('seconds').innerHTML = '00';
+                
+                // Show birthday animation if it's birthday time
+                showBirthdayAnimation();
             }
         }
         
@@ -450,6 +660,124 @@
         }
         
         setInterval(createConfetti, 100);
+
+        // Birthday Animation Functions
+        function showBirthdayAnimation() {
+            const birthdayAnimation = document.getElementById('birthdayAnimation');
+            birthdayAnimation.style.display = 'flex';
+            
+            // Ask user before playing music in the animation
+            const playMusicInAnimation = confirm("Apakah kamu ingin memainkan lagu ulang tahun?");
+            
+            if (playMusicInAnimation) {
+                // Start playing birthday song
+                audioElement.src = "asset/happy-birthday-song.mp3";
+                
+                const playPromise = audioElement.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        musicIcon.className = 'fas fa-pause';
+                        musicPlaying = true;
+                    }).catch(error => {
+                        console.log("Play was prevented: ", error);
+                    });
+                }
+            }
+            
+            // Create emojis circle
+            createEmojiCircle();
+            
+            // Create fireworks
+            createFireworks();
+            
+            // Add continue button event listener
+            document.getElementById('continueBtn').addEventListener('click', function() {
+                birthdayAnimation.style.display = 'none';
+                
+                // Don't automatically stop the music when closing the animation
+                // Let the user control it with the music button
+            });
+        }
+        
+        function createEmojiCircle() {
+            const circle = document.getElementById('birthdayCircle');
+            const emojis = ['🎉', '🎊', '🎈', '🎁', '💖', '✨', '🥳', '🍰'];
+            const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+            
+            // Clear previous emojis
+            circle.innerHTML = '';
+            
+            // Create 12 emojis around the circle
+            for (let i = 0; i < 12; i++) {
+                const emoji = document.createElement('div');
+                emoji.classList.add('birthday-emoji');
+                emoji.textContent = emojis[i % emojis.length];
+                
+                // Position in a circle
+                const angle = (i / 12) * 2 * Math.PI;
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+                emoji.style.animation = `birthday-rotate 10s linear infinite`;
+                
+                circle.appendChild(emoji);
+            }
+        }
+        
+        function createFireworks() {
+            const fireworksContainer = document.getElementById('fireworks');
+            
+            // Create 20 fireworks
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.classList.add('firework');
+                    
+                    // Random position
+                    firework.style.left = Math.random() * 100 + '%';
+                    firework.style.top = Math.random() * 100 + '%';
+                    
+                    // Random color
+                    const colors = ['#ff0040', '#00ffd9', '#ff7700', '#00ff44', '#ffff00'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    firework.style.boxShadow = `0 0 10px 5px ${color}`;
+                    
+                    fireworksContainer.appendChild(firework);
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        firework.remove();
+                    }, 2000);
+                    
+                }, i * 300); // Stagger the fireworks
+            }
+        }
+
+        // Check if it's already birthday time on page load
+        function checkIfBirthday() {
+            const birthdayDate = new Date('May 20, 2025 00:00:00').getTime();
+            const now = new Date().getTime();
+            
+            if (now >= birthdayDate) {
+                clearInterval(countdownTimer);
+                document.getElementById('days').innerHTML = '00';
+                document.getElementById('hours').innerHTML = '00';
+                document.getElementById('minutes').innerHTML = '00';
+                document.getElementById('seconds').innerHTML = '00';
+                
+                // Show birthday animation
+                showBirthdayAnimation();
+            }
+        }
+        
+        // Check on page load
+        checkIfBirthday();
+        
+        // For testing - uncomment to immediately show birthday animation
+        // uncomment the line below to test the birthday animation
+        //setTimeout(showBirthdayAnimation, 2000);
     </script>
 </body>
 </html>
